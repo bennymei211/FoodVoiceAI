@@ -33,7 +33,8 @@ def get_gpt_response(user_input):
     return response.choices[0].message.content
 
 def get_gpt_image(user_input):
-    response = client.images.generate(model='dall-e-3', prompt=user_input, size='1024x1024', quality='standard', n=1, style='vivid')
+    prompt = f"A photorealistic image of only the following food items on a plain white background: {user_input}. No extra items, no decorations, and no background objects. Just the exact items listed."
+    response = client.images.generate(model='dall-e-3', prompt=prompt, size='1024x1024', quality='standard', n=1, style='vivid')
     image_url = response.data[0].url
     print(image_url)
 
@@ -56,8 +57,8 @@ if __name__ == "__main__":
             time.sleep(4)
             break
         response = get_gpt_response(user_input)
-        get_gpt_image(user_input)
         speak(response, engine)
         print(f"Chatbot: {response}")
+        get_gpt_image(user_input)
     engine.stop()
 
