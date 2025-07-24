@@ -32,6 +32,11 @@ def get_gpt_response(user_input):
     )
     return response.choices[0].message.content
 
+def get_gpt_image(user_input):
+    response = client.images.generate(model='dall-e-3', prompt=user_input, size='1024x1024', quality='standard', n=1, style='vivid')
+    image_url = response.data[0].url
+    print(image_url)
+
 
 def speak(text, engine):
     engine.say(text)
@@ -51,6 +56,7 @@ if __name__ == "__main__":
             time.sleep(4)
             break
         response = get_gpt_response(user_input)
+        get_gpt_image(user_input)
         speak(response, engine)
         print(f"Chatbot: {response}")
     engine.stop()
