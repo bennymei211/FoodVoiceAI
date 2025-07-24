@@ -7,6 +7,8 @@ import asyncio
 import edge_tts
 
 load_dotenv()
+
+# initialize OpenAI object with API Key
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 def get_gpt_response(user_input):
@@ -53,11 +55,3 @@ if __name__ == "__main__":
         print(f"Chatbot: {response}")
     engine.stop()
 
-
-# while True:
-#         user_input = input("You: ")
-#         if user_input == 'exit':
-#             print("ChatBot: Goodbye!")
-#             break
-#         response = get_gpt_response(user_input)
-#         print(f"Chatbot: {response}")
