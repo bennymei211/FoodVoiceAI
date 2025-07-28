@@ -1,12 +1,15 @@
 from dotenv import load_dotenv, find_dotenv
+# llm wrapping imports
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
     AIMessage,
     HumanMessage,
     SystemMessage
 )
+# prompt imports
 from langchain_core.prompts import PromptTemplate
-
+# chain imports
+from langchain_core.runnables import RunnableSequence
 
 load_dotenv(find_dotenv())
 
@@ -26,15 +29,15 @@ llm = ChatOpenAI(model_name="gpt-3.5-turbo")
 
 
 # ----prompt template----
-# template = """"
-# You are an expert data scientist with an expertise in building deep learning models.
-# Explain the concept of {concept} in a couple of lines
-# """
+template = """"
+You are an expert data scientist with an expertise in building deep learning models.
+Explain the concept of {concept} in a couple of lines
+"""
 
-# prompt = PromptTemplate(
-#     input_variables=["concept"],
-#     template=template
-# )
+prompt1 = PromptTemplate(
+    input_variables=["concept"],
+    template=template
+)
 
 # print(prompt, "\n")
 # print(llm.invoke(prompt.format(concept="regularization")).content)
@@ -43,4 +46,3 @@ llm = ChatOpenAI(model_name="gpt-3.5-turbo")
 
 
 
-# chaining
