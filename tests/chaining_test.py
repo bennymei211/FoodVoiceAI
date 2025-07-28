@@ -11,6 +11,9 @@ from langchain_core.prompts import PromptTemplate
 # chain imports
 from langchain_core.runnables import RunnableSequence
 
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+
 load_dotenv(find_dotenv())
 
 # ----llm wrapping----
@@ -43,4 +46,12 @@ overall_chain = RunnableSequence(
 )
 
 result = overall_chain.invoke({"concept": "autoencoder"})
-print(result.content)
+# print(result.content)
+
+text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size = 100,
+    chunk_overlap = 0
+)
+
+texts = text_splitter.create_documents([result.content])
+print(texts)

@@ -15,15 +15,15 @@ load_dotenv(find_dotenv())
 
 # ----llm wrapping----
 llm = ChatOpenAI(model_name="gpt-3.5-turbo")
-# llm.invoke("explain large language models in one sentence")
+llm.invoke("explain large language models in one sentence")
 
-# chat = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.3)
-# messages = [
-#     SystemMessage(content="You are an expert data scientist"),
-#     HumanMessage(content="Write a Python script that trains a neural network on simulated data")
-# ]
-# response = chat.invoke(messages)
-# print(response.content, end='\n')
+chat = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0.3)
+messages = [
+    SystemMessage(content="You are an expert data scientist"),
+    HumanMessage(content="Write a Python script that trains a neural network on simulated data")
+]
+response = chat.invoke(messages)
+print(response.content, end='\n')
 
 
 
@@ -34,13 +34,13 @@ You are an expert data scientist with an expertise in building deep learning mod
 Explain the concept of {concept} in a couple of lines
 """
 
-prompt1 = PromptTemplate(
+prompt = PromptTemplate(
     input_variables=["concept"],
     template=template
 )
 
-# print(prompt, "\n")
-# print(llm.invoke(prompt.format(concept="regularization")).content)
+print(prompt, "\n")
+print(llm.invoke(prompt.format(concept="regularization")).content)
 
 
 
