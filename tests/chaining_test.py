@@ -12,6 +12,7 @@ from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import RunnableSequence
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_openai import OpenAIEmbeddings
 
 
 load_dotenv(find_dotenv())
@@ -54,4 +55,8 @@ text_splitter = RecursiveCharacterTextSplitter(
 )
 
 texts = text_splitter.create_documents([result.content])
-print(texts)
+# print(texts)
+
+embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
+query_result = embeddings.embed_query(texts[0].page_content)
+print(query_result)
