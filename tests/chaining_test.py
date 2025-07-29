@@ -1,4 +1,5 @@
 from dotenv import load_dotenv, find_dotenv
+import os
 # llm wrapping imports
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import (
@@ -13,6 +14,10 @@ from langchain_core.runnables import RunnableSequence
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
+
+# pinecone
+from pinecone import Pinecone, ServerlessSpec
+from langchain_community.vectorstores import Pinecone as PineconeVectorStore
 
 
 load_dotenv(find_dotenv())
@@ -60,3 +65,29 @@ texts = text_splitter.create_documents([result.content])
 embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
 query_result = embeddings.embed_query(texts[0].page_content)
 print(query_result)
+
+# initialize pinecone
+pc = Pinecone(os.getenv('PINECONE_API_KEY'))
+
+index_name = "langchain-quickstart"
+
+if not pc.has_index(index_name):
+    pc.create_index_for_model(
+        name=index_name,
+        cloud="aws",
+        region="us-east-1",
+        embed={
+            "model":"llama-text-embed-v2",
+            "field_map":{"text": "chunk_text"}
+        }
+    )
+
+search = PineconeVectorStore.from_documents(
+    documents=texts,
+    embedding=embeddings,
+    index=index_name
+)
+
+query = "What is a magical about an encoder" 
+result = search.similarity_search(query)
+print(result)
