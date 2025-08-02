@@ -5,7 +5,7 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 import textwrap
 from langchain.prompts import PromptTemplate
-from langchain_community.document_loaders import YoutubeLoader
+from langchain_core.output_parsers import StrOutputParser
 
 
 load_dotenv()
@@ -53,3 +53,9 @@ llm_gpt4 = ChatOpenAI(model="gpt-4o")
 
 # print(chain.invoke({"topic":"What is Langchain"}).content)
 
+
+summarize_prompt_template = """
+You are a helpful assistant that summarizes AI concepts:
+{context}
+Summarize the context
+"""
