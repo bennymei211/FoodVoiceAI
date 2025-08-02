@@ -36,7 +36,7 @@ def get_gpt_json_response(llm_with_structure, user_input):
     json_prompt_template="""
     You are a helpful dietary assistant that logs and keeps track of meals. Given the following input:
     {meal_input}
-    Provide and log nutritional values for the meal. Make sure to ask for each meal. Respond in a way that is text-to-speech friendly.
+    Provide and log nutritional values for the meal. 
     Extract the information into a JSON format with this structure:
 
     {format_structure}
@@ -86,6 +86,7 @@ if __name__ == "__main__":
     # wrapper for gpt-4o plain conversation generation and gpt-4o json format generation
     llm_gpt4 = ChatOpenAI(model="gpt-4o")
     llm_gpt4_with_structure = llm_gpt4.with_structured_output(method="json_mode")
+    
 
     while True:
         # get user input
@@ -102,6 +103,6 @@ if __name__ == "__main__":
         today = date.today()
         with open(f"{today}_meal_log.json", "w") as f:
             json.dump(get_gpt_json_response(llm_with_structure=llm_gpt4_with_structure, user_input=user_prompt), f)
-
+    
     engine.stop()
 
