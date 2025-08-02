@@ -6,7 +6,9 @@ from langchain_core.messages import HumanMessage, SystemMessage
 import textwrap
 from langchain.prompts import PromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-
+from langchain_core.runnables import RunnableLambda
+from langchain_core.runnables import RunnablePassthrough
+from langchain_core.runnables import RunnableParallel
 
 load_dotenv()
 
@@ -53,9 +55,46 @@ llm_gpt4 = ChatOpenAI(model="gpt-4o")
 
 # print(chain.invoke({"topic":"What is Langchain"}).content)
 
+# # RUNNABLE SEQUENCE
+# summarize_prompt_template = """
+# You are a helpful assistant that summarizes AI concepts:
+# {context}
+# Summarize the context
+# """
 
-summarize_prompt_template = """
-You are a helpful assistant that summarizes AI concepts:
-{context}
-Summarize the context
-"""
+# summarize_prompt = PromptTemplate.from_template(summarize_prompt_template)
+
+# output_parser = StrOutputParser()
+# chain = summarize_prompt | llm_gpt4 | output_parser
+
+# print(chain.invoke({"context" : "What is Langchain?"}))
+
+# # RUNNABLELAMBDA: inject python functions into a chain with Runnable Lambda
+# summarize_chain = summarize_prompt | llm_gpt4 | output_parser
+
+# length_lambda = RunnableLambda(lambda summary: f"Summary length: {len(summary)} characters")
+
+# lambda_chain = summarize_chain | length_lambda
+
+# print(lambda_chain.invoke({"context" : "What is Langchain?"}))
+
+
+# RUNNABLEPASSTHROUGH: for passing through unchaged or changed inputs
+# unchanged is typically used with parallel
+# summarize_prompt_template = """
+# You are a helpful assistant that summarizes AI concepts:
+# {context}
+# Summarize the context
+# """
+
+# summarize_prompt = PromptTemplate.from_template(summarize_prompt_template)
+# output_parser = StrOutputParser()
+# summarize_chain = summarize_prompt | llm_gpt4 | output_parser
+
+# length_lambda = RunnableLambda(lambda summary: f"Summary length: {len(summary)} characters")
+
+# passthrough = RunnablePassthrough()
+
+# placeholder_chain = summarize_chain | passthrough | length_lambda
+
+# print(placeholder_chain.invoke({"context" : "What is Langchain?"}))
