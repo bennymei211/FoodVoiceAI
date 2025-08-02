@@ -1,4 +1,5 @@
 import json
+import pyttsx3
 from dotenv import load_dotenv
 from datetime import date
 from langchain_openai import ChatOpenAI
@@ -26,7 +27,8 @@ def get_gpt_response(llm, user_input):
     # chain for plain conversation generation
     chain = plain_prompt | llm
 
-    print(chain.invoke({"meal_input":user_input}).content)
+    response = chain.invoke({"meal_input":user_input}).content
+    return response
 
 # returns gpt-4o response as a json-formatted string
 def get_gpt_json_response(llm_with_structure, user_input):
@@ -67,9 +69,17 @@ def get_gpt_json_response(llm_with_structure, user_input):
     
     return meal_as_json
 
+
+def speak(text, engine):
+    engine.say(text)
+    engine.runAndWait()
+
 if __name__ == "__main__":
     # load api keys
     load_dotenv()
+
+    # initialize pyttsx3 engine
+    engine = pyttsx3.init()
 
     # wrapper for gpt-4o plain conversation generation and gpt-4o json format generation
     llm_gpt4 = ChatOpenAI(model="gpt-4o")
@@ -78,7 +88,7 @@ if __name__ == "__main__":
     # get user input
     user_prompt = input("You: ")
 
-    get_gpt_response(llm=llm_gpt4, user_input=user_prompt)
+    print(get_gpt_response(llm=llm_gpt4, user_input=user_prompt))
 
     # output to json file using today's date
     today = date.today()
