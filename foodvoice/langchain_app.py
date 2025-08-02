@@ -5,10 +5,9 @@ from datetime import date
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_community.document_loaders import JSONLoader
-from langchain.memory import ConversationBufferMemory
-from langchain.chains import ConversationChain
+from langchain_core.runnables.history import RunnableWithMessageHistory
 
 
 # prints response from gpt-4o
@@ -21,10 +20,7 @@ def get_gpt_response(llm, user_input):
     """
 
     # prompt for plain conversation
-    plain_prompt = PromptTemplate(
-        input_variables=["meal_input"],
-        template=plain_prompt_template
-    )
+    plain_prompt = ChatPromptTemplate.from_template(plain_prompt_template)
 
     # chain for plain conversation generation
     chain = plain_prompt | llm
@@ -59,10 +55,7 @@ def get_gpt_json_response(llm_with_structure, user_input):
     }"""
 
     # prompt for json format
-    json_prompt = PromptTemplate(
-        input_variables=["meal_input", "format_structure"],
-        template=json_prompt_template
-    )
+    json_prompt = ChatPromptTemplate.from_template(json_prompt_template)
 
     # chain for json format generation
     json_chain = json_prompt | llm_with_structure
@@ -80,7 +73,7 @@ def get_dalle_prompt(user_input):
 
     """
 
-    image_prompt = PromptTemplate.from_template(image_prompt_template)
+    image_prompt = ChatPromptTemplate.from_template(image_prompt_template)
     return image_prompt.format(meal_input=user_input)
 
 def get_dalle3_image(prompt):
@@ -121,10 +114,10 @@ if __name__ == "__main__":
             break
 
         response = get_gpt_response(llm=llm_gpt4, user_input=user_prompt)
-        image_prompt = get_dalle_prompt(user_input=user_prompt)
-        image_url = get_dalle3_image(prompt=user_prompt)
+        # image_prompt = get_dalle_prompt(user_input=user_prompt)
+        # image_url = get_dalle3_image(prompt=user_prompt)
         print(response)
-        print(image_url)
+        # print(image_url)
 
         # output to json file using today's date
         today = date.today()
