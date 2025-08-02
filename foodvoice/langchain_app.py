@@ -2,6 +2,7 @@ import json
 import pyttsx3
 from dotenv import load_dotenv
 from datetime import date
+from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.prompts import PromptTemplate
@@ -69,6 +70,28 @@ def get_gpt_json_response(llm_with_structure, user_input):
     
     return meal_as_json
 
+# image prompt for dall-e-3
+def get_dalle_prompt(user_input):
+    image_prompt_template="""
+    Create a DALL-E-3 prompt that describes a photorealistic image of the following meal:
+    {meal_input}
+    with a plain white background, no decorations or extra items, and only include the exact food items listed.
+
+    """
+
+    image_prompt = PromptTemplate.from_template(image_prompt_template)
+    return image_prompt.format(meal_input=user_input)
+
+def get_dalle3_image(prompt):
+    client = OpenAI()
+    response = client.images.generate(
+        model="dall-e-3",
+        prompt=prompt,
+        size="1024x1024",
+        n=1,
+        response_format="url"
+    )
+    return response.data[0].url
 
 def speak(text, engine):
     engine.say(text)
@@ -97,7 +120,10 @@ if __name__ == "__main__":
             break
 
         response = get_gpt_response(llm=llm_gpt4, user_input=user_prompt)
+        image_prompt = get_dalle_prompt(user_input=user_prompt)
+        image_url = get_dalle3_image(prompt=user_prompt)
         print(response)
+        print(image_url)
 
         # output to json file using today's date
         today = date.today()
