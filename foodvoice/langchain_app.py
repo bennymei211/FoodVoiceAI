@@ -7,8 +7,9 @@ from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain.prompts import PromptTemplate
 from langchain_community.document_loaders import JSONLoader
-# the create_stuff_documents_chain takes a list of docs and formats them all into a prompt
-from langchain.chains.combine_documents import create_stuff_documents_chain
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationChain
+
 
 # prints response from gpt-4o
 def get_gpt_response(llm, user_input):
