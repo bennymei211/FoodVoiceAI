@@ -80,18 +80,28 @@ if __name__ == "__main__":
 
     # initialize pyttsx3 engine
     engine = pyttsx3.init()
+    print("ChatBot: Hello! What did you have for breakfast?")
+    # speak("Hello! What did you have for breakfast?", engine)
 
     # wrapper for gpt-4o plain conversation generation and gpt-4o json format generation
     llm_gpt4 = ChatOpenAI(model="gpt-4o")
     llm_gpt4_with_structure = llm_gpt4.with_structured_output(method="json_mode")
 
-    # get user input
-    user_prompt = input("You: ")
+    while True:
+        # get user input
+        user_prompt = input("You: ")
 
-    print(get_gpt_response(llm=llm_gpt4, user_input=user_prompt))
+        # exit conition
+        if user_prompt.lower() in ["quit", "exit"]:
+            break
 
-    # output to json file using today's date
-    today = date.today()
-    with open(f"{today}_meal_log.json", "w") as f:
-        json.dump(get_gpt_json_response(llm_with_structure=llm_gpt4_with_structure, user_input=user_prompt), f)
+        response = get_gpt_response(llm=llm_gpt4, user_input=user_prompt)
+        print(response)
+
+        # output to json file using today's date
+        today = date.today()
+        with open(f"{today}_meal_log.json", "w") as f:
+            json.dump(get_gpt_json_response(llm_with_structure=llm_gpt4_with_structure, user_input=user_prompt), f)
+
+    engine.stop()
 
