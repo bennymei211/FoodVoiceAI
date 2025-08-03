@@ -2,10 +2,13 @@ import json
 import pyttsx3
 from dotenv import load_dotenv
 from datetime import date
+from typing import List
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers.json import JsonOutputParser
+from pydantic import BaseModel, Field
 from langchain_community.document_loaders import JSONLoader
 from langchain_core.runnables.history import RunnableWithMessageHistory
 
@@ -40,27 +43,45 @@ def get_gpt_json_response(llm_with_structure, user_input):
     {format_structure}
     """
 
-    # structure for json format
-    format_structure = """{
-        "meal": "...",
-        "dish_name": "...",
-        "ingredients": ["...", "..."],
-        "nutritional_info": {
-            "protein": "...",
-            "fat": "...",
-            "carbs": "...",
-            "sodium": "...",
-            ...
-        }
-    }"""
+    # # structure for json format
+    # format_structure = """{
+    #     "meal": "...",
+    #     "dish_name": "...",
+    #     "ingredients": ["...", "..."],
+    #     "nutritional_info": {
+    #         "protein": "...",
+    #         "fat": "...",
+    #         "carbs": "...",
+    #         "sodium": "...",
+    #         ...
+    #     }
+    # }"""
+
+    class NutritionalInfo(BaseModel):
+        protein: float = Field(description="Amount of protein in grams")
+        fat: float = Field(description="Amount of fat in grams")
+        carbohydrates: float = Field(description="Amount of carbohydrates in grams")
+        sodium: float = Field(description="Amount of sodium in milligrams")
+        fiber: float = Field(description="Amount of fiber in grams")
+        sugar: float = Field(description="Amount of sugar in grams")
+
+    class Meal(BaseModel):
+        meal: str = Field(..., description="Meal of the day")
+        dish_name: str = Field(description="Name of the dish")
+        ingredients: List[str] = Field(description="List of ingredients from the dish")
+        nutritional_info: NutritionalInfo = Field(description="Nutritional information for the dish")
+
+
 
     # prompt for json format
     json_prompt = ChatPromptTemplate.from_template(json_prompt_template)
 
-    # chain for json format generation
-    json_chain = json_prompt | llm_with_structure
+    parser = JsonOutputParser(pydantic_object=Meal)
 
-    meal_as_json = json_chain.invoke({"meal_input":user_input, "format_structure":format_structure})
+    # chain for json format generation
+    json_chain = json_prompt | llm_with_structure | parser
+
+    meal_as_json = json_chain.invoke({"meal_input":user_input, "format_structure":parser.get_format_instructions()})
     
     return meal_as_json
 
@@ -102,8 +123,6 @@ if __name__ == "__main__":
 
     # wrapper for gpt-4o plain conversation generation and gpt-4o json format generation
     llm_gpt4 = ChatOpenAI(model="gpt-4o")
-    llm_gpt4_with_structure = llm_gpt4.with_structured_output(method="json_mode")
-    
 
     while True:
         # get user input
@@ -122,7 +141,7 @@ if __name__ == "__main__":
         # output to json file using today's date
         today = date.today()
         with open(f"{today}_meal_log.json", "w") as f:
-            json.dump(get_gpt_json_response(llm_with_structure=llm_gpt4_with_structure, user_input=user_prompt), f)
+            json.dump(get_gpt_json_response(llm_with_structure=llm_gpt4, user_input=user_prompt), f)
     
     engine.stop()
 
