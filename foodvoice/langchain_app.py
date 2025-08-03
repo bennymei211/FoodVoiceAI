@@ -130,7 +130,7 @@ if __name__ == "__main__":
     llm_gpt4 = ChatOpenAI(model="gpt-4o")
 
     chat_history = [
-        HumanMessage(content='I had 2 eggs for breakfast')
+        AIMessage(content='What did you have for breakfast?')
     ]
 
     while True:
