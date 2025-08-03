@@ -5,30 +5,35 @@ from datetime import date
 from typing import List
 from openai import OpenAI
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import HumanMessage, SystemMessage
+from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers.json import JsonOutputParser
 from pydantic import BaseModel, Field
 from langchain_community.document_loaders import JSONLoader
 from langchain_core.runnables.history import RunnableWithMessageHistory
+from langchain_core.prompts import MessagesPlaceholder
 
 
 # prints response from gpt-4o
-def get_gpt_response(llm, user_input):
+def get_gpt_response(llm, user_input, chat_history):
     # plain conversation prompt template
-    plain_prompt_template="""
+    system_message="""
     You are a helpful dietary assistant that logs and keeps track of meals. Given the following input:
     {meal_input}
     Provide and log nutritional values for the meal. Make sure to ask for each meal. Respond in a way that is text-to-speech friendly.
     """
 
     # prompt for plain conversation
-    plain_prompt = ChatPromptTemplate.from_template(plain_prompt_template)
+    plain_prompt = ChatPromptTemplate.from_messages([
+        ("system", system_message),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{meal_input}")
+    ])
 
     # chain for plain conversation generation
     chain = plain_prompt | llm
 
-    response = chain.invoke({"meal_input":user_input}).content
+    response = chain.invoke({"meal_input":user_input, "chat_history": chat_history}).content
     return response
 
 # returns gpt-4o response as a json-formatted string
@@ -45,7 +50,7 @@ def get_gpt_json_response(llm_with_structure, user_input):
 
     # # structure for json format
     # format_structure = """{
-    #     "meal": "...",
+    #     "meal": "...",sssssasa
     #     "dish_name": "...",
     #     "ingredients": ["...", "..."],
     #     "nutritional_info": {
@@ -124,6 +129,10 @@ if __name__ == "__main__":
     # wrapper for gpt-4o plain conversation generation and gpt-4o json format generation
     llm_gpt4 = ChatOpenAI(model="gpt-4o")
 
+    chat_history = [
+        HumanMessage(content='I had 2 eggs for breakfast')
+    ]
+
     while True:
         # get user input
         user_prompt = input("You: ")
@@ -132,16 +141,18 @@ if __name__ == "__main__":
         if user_prompt.lower() in ["quit", "exit"]:
             break
 
-        response = get_gpt_response(llm=llm_gpt4, user_input=user_prompt)
+        response = get_gpt_response(llm=llm_gpt4, user_input=user_prompt, chat_history=chat_history)
+        chat_history.append(HumanMessage(content=user_prompt))
+        chat_history.append(AIMessage(content=response))
         # image_prompt = get_dalle_prompt(user_input=user_prompt)
         # image_url = get_dalle3_image(prompt=user_prompt)
-        print(response)
+        print("ChatBot: ", response)
         # print(image_url)
 
         # output to json file using today's date
         today = date.today()
-        with open(f"{today}_meal_log.json", "w") as f:
-            json.dump(get_gpt_json_response(llm_with_structure=llm_gpt4, user_input=user_prompt), f)
+        # with open(f"{today}_meal_log.json", "w") as f:
+        #     json.dump(get_gpt_json_response(llm_with_structure=llm_gpt4, user_input=user_prompt), f)
     
     engine.stop()
 
