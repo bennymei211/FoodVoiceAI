@@ -142,7 +142,7 @@ if __name__ == "__main__":
     # initialize pyttsx3 engine
     engine = pyttsx3.init()
     print("ChatBot: Hello! What did you have for breakfast?")
-    # speak("Hello! What did you have for breakfast?", engine)
+    speak("Hello! What did you have for breakfast?", engine)
 
     # wrapper for gpt-4o plain conversation generation and gpt-4o json format generation
     llm_gpt4 = ChatOpenAI(model="gpt-4o")
@@ -162,10 +162,10 @@ if __name__ == "__main__":
         response = get_gpt_response(llm=llm_gpt4, user_input=user_prompt, chat_history=chat_history)
         chat_history.append(HumanMessage(content=user_prompt))
         chat_history.append(AIMessage(content=response))
-        # image_prompt = get_dalle_prompt(user_input=user_prompt)
-        # image_url = get_dalle3_image(prompt=user_prompt)
+        image_prompt = get_dalle_prompt(user_input=user_prompt)
+        image_url = get_dalle3_image(prompt=user_prompt)
         print("ChatBot: ", response)
-        # print(image_url)
+        print(image_url)
 
         # output to json file using today's date
         today = date.today()
