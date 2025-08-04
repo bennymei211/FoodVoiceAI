@@ -1,5 +1,6 @@
 import json
 import pyttsx3
+import os
 from dotenv import load_dotenv
 from datetime import date
 from typing import List
@@ -117,6 +118,23 @@ def speak(text, engine):
     engine.say(text)
     engine.runAndWait()
 
+def append_json_entry(new_entry, filename="data.json"):
+    if not os.path.exists(filename):
+        with open(filename, 'w') as f:
+            json.dump([], f, indent=4)
+
+    with open(filename, 'r+') as file:
+        try:
+            data = json.load(file)
+        except json.JSONDecodeError:
+            data =[]
+
+        data.append(new_entry)
+
+        file.seek(0)
+        json.dump(data, file, indent=4)
+        file.truncate()
+
 if __name__ == "__main__":
     # load api keys
     load_dotenv()
@@ -151,8 +169,7 @@ if __name__ == "__main__":
 
         # output to json file using today's date
         today = date.today()
-        # with open(f"{today}_meal_log.json", "w") as f:
-        #     json.dump(get_gpt_json_response(llm_with_structure=llm_gpt4, user_input=user_prompt), f)
+        append_json_entry(new_entry=get_gpt_json_response(llm_with_structure=llm_gpt4, user_input=user_prompt), filename=f"{today}_meal_log.json")
     
     engine.stop()
 
