@@ -1,10 +1,12 @@
 import json
 import pyttsx3
 import os
+import time
 from dotenv import load_dotenv
 from datetime import date
 from typing import List
 from openai import OpenAI
+import speech_recognition as sr
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
@@ -19,9 +21,9 @@ from langchain_core.prompts import MessagesPlaceholder
 def get_gpt_response(llm, user_input, chat_history):
     # plain conversation prompt template
     system_message="""
-    You are a helpful dietary assistant that logs and keeps track of meals. Given the following input:
+    You are a helpful dietary assistant that logs and keeps track of meals. Make sure to ask for each meal. Given the following input:
     {meal_input}
-    Provide and log nutritional values for the meal. Make sure to ask for each meal. Respond in a way that is text-to-speech friendly.
+    Provide and log nutritional values for the meal. Respond in a way that is text-to-speech friendly.
     """
 
     # prompt for plain conversation
@@ -94,10 +96,13 @@ def get_gpt_json_response(llm_with_structure, user_input):
 # image prompt for dall-e-3
 def get_dalle_prompt(user_input):
     image_prompt_template="""
-    Create a DALL-E-3 prompt that describes a photorealistic image of the following meal:
+    Create a DALL-E-3 image prompt describing a photorealistic, top-down view of ONLY the following meal:
     {meal_input}
-    with a plain white background, no decorations or extra items, and only include the exact food items listed.
-
+    - The background must be plain white.
+    - Do NOT include any plates, utensils, decorations, or extra items.
+    - Focus only on the lsited food items and their ingredients
+    - No table or background context should appear
+    - The food should be centered
     """
 
     image_prompt = ChatPromptTemplate.from_template(image_prompt_template)
@@ -141,8 +146,8 @@ if __name__ == "__main__":
 
     # initialize pyttsx3 engine
     engine = pyttsx3.init()
-    print("ChatBot: Hello! What did you have for breakfast?")
-    speak("Hello! What did you have for breakfast?", engine)
+    # initialize speech recognizer
+    recognizer = sr.Recognizer()
 
     # wrapper for gpt-4o plain conversation generation and gpt-4o json format generation
     llm_gpt4 = ChatOpenAI(model="gpt-4o")
@@ -151,25 +156,48 @@ if __name__ == "__main__":
         AIMessage(content='What did you have for breakfast?')
     ]
 
+
+    flag = 0
     while True:
-        # get user input
-        user_prompt = input("You: ")
+        try:
+            engine.say("...")
+            if flag == 0:
+                print("ChatBot: Hello! What did you have for breakfast?")
+                speak("Hello! What did you have for breakfast?", engine)
+                time.sleep(1.5)
+            flag = 1
+            with sr.Microphone() as source:
+                recognizer.adjust_for_ambient_noise(source, duration=1)
+                # get user input
+                # user_prompt = input("You: ")
+                audio = recognizer.listen(source)
+                user_prompt = recognizer.recognize_google(audio)
+                print("You:", user_prompt)
 
-        # exit conition
-        if user_prompt.lower() in ["quit", "exit"]:
-            break
+                # exit conition
+                if user_prompt.lower() in ["quit", "exit"]:
+                    speak("Thanks for sharing! Goodbye!", engine)
+                    print("ChatBot: Thanks for sharing! Goodbye!")
+                    time.sleep(4)
+                    break
 
-        response = get_gpt_response(llm=llm_gpt4, user_input=user_prompt, chat_history=chat_history)
-        chat_history.append(HumanMessage(content=user_prompt))
-        chat_history.append(AIMessage(content=response))
-        image_prompt = get_dalle_prompt(user_input=user_prompt)
-        image_url = get_dalle3_image(prompt=user_prompt)
-        print("ChatBot: ", response)
-        print(image_url)
+                response = get_gpt_response(llm=llm_gpt4, user_input=user_prompt, chat_history=chat_history)
+                chat_history.append(HumanMessage(content=user_prompt))
+                chat_history.append(AIMessage(content=response))
+                image_prompt = get_dalle_prompt(user_input=user_prompt)
+                # image_url = get_dalle3_image(prompt=user_prompt)
+                print("ChatBot:", response)
+                # print(image_url)
+                speak(response, engine)
+                time.sleep(1.5)
 
-        # output to json file using today's date
-        today = date.today()
-        append_json_entry(new_entry=get_gpt_json_response(llm_with_structure=llm_gpt4, user_input=user_prompt), filename=f"{today}_meal_log.json")
-    
+                # output to json file using today's date
+                today = date.today()
+                append_json_entry(new_entry=get_gpt_json_response(llm_with_structure=llm_gpt4, user_input=user_prompt), filename=f"{today}_meal_log.json")
+        except sr.UnknownValueError:
+            time.sleep(4)
+            print("Sorry, I couldn't understand the audio")
+            speak("Sorry, I couldn't understand the audio", engine)
+            time.sleep(1.5)
     engine.stop()
 
