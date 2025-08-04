@@ -185,9 +185,9 @@ if __name__ == "__main__":
                 chat_history.append(HumanMessage(content=user_prompt))
                 chat_history.append(AIMessage(content=response))
                 image_prompt = get_dalle_prompt(user_input=user_prompt)
-                # image_url = get_dalle3_image(prompt=user_prompt)
+                image_url = get_dalle3_image(prompt=user_prompt)
                 print("ChatBot:", response)
-                # print(image_url)
+                print(image_url)
                 speak(response, engine)
                 time.sleep(1.5)
 
