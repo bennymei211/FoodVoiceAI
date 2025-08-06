@@ -11,7 +11,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationChain
 
 
-# prints response from gpt-4o
+# gets response from gpt-4o
 def get_gpt_response(llm, user_input):
     # plain conversation prompt template
     plain_prompt_template="""
