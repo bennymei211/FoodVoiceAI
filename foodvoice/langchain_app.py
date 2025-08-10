@@ -12,8 +12,8 @@ from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers.json import JsonOutputParser
 from pydantic import BaseModel, Field
-from langchain_community.document_loaders import JSONLoader
-from langchain_core.runnables.history import RunnableWithMessageHistory
+# from langchain_community.document_loaders import JSONLoader
+# from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import MessagesPlaceholder
 
 
@@ -55,7 +55,7 @@ def get_gpt_json_response(llm_with_structure, user_input):
 
     # # structure for json format
     # format_structure = """{
-    #     "meal": "...",sssssasa
+    #     "meal": "...",
     #     "dish_name": "...",
     #     "ingredients": ["...", "..."],
     #     "nutritional_info": {
