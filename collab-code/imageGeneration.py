@@ -7,8 +7,11 @@ import base64
 import os
 import tempfile
 
+from dotenv import load_dotenv
+
+load_dotenv()
 # Set your OpenAI API key
-openai.api_key = ""
+# openai.api_key = os.getenv("OPENAI_API_KEY")
 def generate_image(prompt):
     #This function uses DALLE.E 3 model to create an image from a text prompt and returns the URL where the generated image can be accessed.
     response = openai.images.generate(
