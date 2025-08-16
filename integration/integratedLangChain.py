@@ -55,6 +55,28 @@ def get_dalle3_image(prompt):
     )
     return response.data[0].url
 
+# prints response from gpt-4o
+def get_gpt_response(llm, user_input, chat_history):
+    # plain conversation prompt template
+    system_message="""
+    You are a helpful dietary assistant that logs and keeps track of meals. Make sure to ask for each meal. Given the following input:
+    {meal_input}
+    Provide and log nutritional values for the meal. Respond in a way that is text-to-speech friendly.
+    """
+
+    # prompt for plain conversation
+    plain_prompt = ChatPromptTemplate.from_messages([
+        ("system", system_message),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", "{meal_input}")
+    ])
+
+    # chain for plain conversation generation
+    chain = plain_prompt | llm
+
+    response = chain.invoke({"meal_input":user_input, "chat_history": chat_history}).content
+    return response
+
 # # Set your OpenAI API key
 # def generate_image(prompt):
 #     #This function uses DALLE.E 3 model to create an image from a text prompt and returns the URL where the generated image can be accessed.
@@ -100,6 +122,34 @@ def get_refined_prompt(image_path, instruction):
         max_tokens=300
     )
     return response.choices[0].message.content.strip()
+
+def langchain_get_refined_prompt(llm, instruction, chat_history, image_path):
+    with open(image_path, "rb") as img_file:
+        base64_img = base64.b64encode(img_file.read()).decode("utf-8")
+    
+    # plain conversation prompt template
+    system_message="""
+    You are a helpful image refinement assistant.
+    Given an image and instruction, refine or describe the image according to the instruction.
+    """
+
+    # prompt for plain conversation
+    plain_prompt = ChatPromptTemplate.from_messages([
+        ("system", system_message),
+        MessagesPlaceholder(variable_name="chat_history"),
+        ("human", [
+            {"type": "text", "text": f"Refine this image using: {instruction}"},
+            {"type": "image_bas64", "image_base64": f"data:image/png;base64,{base64_img}"}
+        ])
+    ])
+
+    # chain for plain conversation generation
+    chain = plain_prompt | llm
+
+    response = chain.invoke({"chat_history": chat_history}).content
+    return response
+
+
 
 # Streamlit UI starts here
 st.set_page_config(layout="wide")
