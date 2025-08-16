@@ -139,7 +139,7 @@ def langchain_get_refined_prompt(llm, instruction, chat_history, image_path):
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", [
             {"type": "text", "text": f"Refine this image using: {instruction}"},
-            {"type": "image_bas64", "image_base64": f"data:image/png;base64,{base64_img}"}
+            {"type": "image_url", "image_url": f"data:image/png;base64,{base64_img}"}
         ])
     ])
 
@@ -173,6 +173,7 @@ with col1:
 
 # Right: Prompt Input
 with col2:
+    llm = ChatOpenAI(model="gpt-4o")
     st.subheader("💬 Describe your prompt")
     if st.session_state.step == 0:
         initial_prompt = st.text_input("Initial prompt", value="chicken biryani on a plate", key="initial")
@@ -187,7 +188,7 @@ with col2:
     else:
         refine_prompt = st.text_area("Refine the current image", height=100)
         if st.button("Refine Image"):
-            refined_text = get_refined_prompt(st.session_state.image_path, refine_prompt)
+            refined_text = langchain_get_refined_prompt(llm, refine_prompt, st.session_state.prompt_history, st.session_state.image_path) #(llm, instruction, chat_history, image_path):
             image_prompt = get_dalle_prompt(refined_text)
             url = get_dalle3_image(image_prompt)
             os.remove(st.session_state.image_path)
