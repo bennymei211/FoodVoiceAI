@@ -99,29 +99,29 @@ def download_image_to_temp(url):
     image.save(temp_file.name)
     return temp_file.name, image
 
-def get_refined_prompt(image_path, instruction):
-    #This function reads and Base64-encodes the image and sends it along with your instructionto gpt-4o.
-    #Then the model processes both the text and image and returns the model's refined descriptionor instructions for that image.
-    with open(image_path, "rb") as img_file:
-        base64_img = base64.b64encode(img_file.read()).decode("utf-8")
+# def get_refined_prompt(image_path, instruction):
+#     #This function reads and Base64-encodes the image and sends it along with your instructionto gpt-4o.
+#     #Then the model processes both the text and image and returns the model's refined descriptionor instructions for that image.
+#     with open(image_path, "rb") as img_file:
+#         base64_img = base64.b64encode(img_file.read()).decode("utf-8")
 
-    response = openai.chat.completions.create(
-        model="gpt-4o",
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": f"Refine this image using: {instruction}"},
-                    {"type": "image_url", "image_url": {
-                        "url": f"data:image/png;base64,{base64_img}",
-                        "detail": "high"
-                    }}
-                ]
-            }
-        ],
-        max_tokens=300
-    )
-    return response.choices[0].message.content.strip()
+#     response = openai.chat.completions.create(
+#         model="gpt-4o",
+#         messages=[
+#             {
+#                 "role": "user",
+#                 "content": [
+#                     {"type": "text", "text": f"Refine this image using: {instruction}"},
+#                     {"type": "image_url", "image_url": {
+#                         "url": f"data:image/png;base64,{base64_img}",
+#                         "detail": "high"
+#                     }}
+#                 ]
+#             }
+#         ],
+#         max_tokens=300
+#     )
+#     return response.choices[0].message.content.strip()
 
 def langchain_get_refined_prompt(llm, instruction, chat_history, image_path):
     with open(image_path, "rb") as img_file:
@@ -130,7 +130,7 @@ def langchain_get_refined_prompt(llm, instruction, chat_history, image_path):
     # plain conversation prompt template
     system_message="""
     You are a helpful image refinement assistant.
-    Given an image and instruction, refine or describe the image according to the instruction.
+    Given an image, context, and instruction, refine or describe the most recent dish's image according to the instruction.
     """
 
     # prompt for plain conversation
