@@ -28,14 +28,14 @@ from langchain_core.prompts import MessagesPlaceholder
 
 
 load_dotenv()
-
+client = OpenAI()
 # image prompt for dall-e-3
-def get_dalle_prompt(user_input):
+def get_image_prompt(user_input):
     image_prompt_template="""
     Create a DALL-E-3 image prompt describing a photorealistic, top-down view of ONLY the following meal:
     {meal_input}
     - The background must be plain white.
-    - Do NOT include any plates, utensils, decorations, or extra items.
+    - Do NOT include any utensils, decorations, or extra items.
     - Focus only on the lsited food items and their ingredients
     - No table or background context should appear
     - The food should be centered
@@ -45,7 +45,6 @@ def get_dalle_prompt(user_input):
     return image_prompt.format(meal_input=user_input)
 
 def get_dalle3_image(prompt):
-    client = OpenAI()
     response = client.images.generate(
         model="dall-e-3",
         prompt=prompt,
@@ -149,11 +148,69 @@ def langchain_get_refined_prompt(llm, instruction, chat_history, image_path):
     response = chain.invoke({"chat_history": chat_history}).content
     return response
 
+def get_gpt_image1_prompt(user_input):
+    image_prompt_template="""
+    Create a DALL-E-3 image prompt describing a photorealistic, top-down view of ONLY the following meal:
+    {meal_input}
+    - The background must be plain white.
+    - Do NOT include any utensils, decorations, or extra items.
+    - Focus only on the lsited food items and their ingredients
+    - No table or background context should appear
+    - The food should be centered
+    """
+
+    image_prompt = ChatPromptTemplate.from_template(image_prompt_template)
+    return image_prompt.format(meal_input=user_input)
+
+def get_gpt_image1_image(prompt, filename = "food.png"):
+    response = client.responses.create(
+        model="gpt-4o",
+        input=prompt,
+        tools=[{"type": "image_generation"}],
+    )
+
+    image_data = [
+        output.result
+        for output in response.output
+        if output.type == "image_generation_call"
+    ]
+
+    if image_data:
+        image_base64 = image_data[0]
+
+        with open(filename, "wb") as f:
+            f.write(base64.b64decode(image_base64))
+
+    return response.id
+    
+def refine_gpt_image1_image(instruction, previous_response_id, filename = "refined_food.png"):
+    refined_response = client.responses.create(
+        model="gpt-4o",
+        previous_response_id=previous_response_id,
+        input=instruction,
+        tools=[{"type": "image_generation"}],
+    )
+
+    image_data = [
+        output.result
+        for output in refined_response.output
+        if output.type == "image_generation_call"
+    ]
+
+    if image_data:
+        image_base64 = image_data[0]
+        with open(filename, "wb") as f:
+            f.write(base64.b64decode(image_base64))
+
+    return refined_response.id
+
+
+
 
 
 # Streamlit UI starts here
 st.set_page_config(layout="wide")
-st.title("🧠 GPT-4o + DALL·E 3 | Conversational Image Refiner")
+st.title("🧠 GPT-4o + GPT-Image-1 | Conversational Image Refiner")
 
 # Session state
 if "image_path" not in st.session_state:
@@ -178,25 +235,48 @@ with col2:
     if st.session_state.step == 0:
         initial_prompt = st.text_input("Initial prompt", value="chicken biryani on a plate", key="initial")
         if st.button("Generate Initial Image"):
-            image_prompt = get_dalle_prompt(initial_prompt)
-            url = get_dalle3_image(image_prompt)
-            path, img = download_image_to_temp(url)
-            st.session_state.image_path = path
+            image_prompt = get_gpt_image1_prompt(initial_prompt)
+            response_id = get_gpt_image1_image(image_prompt, filename="initial_food.png")
+
+            st.session_state.previous_response_id = response_id
+            st.session_state.image_path = "initial_food.png"
             st.session_state.step = 1
             st.rerun()
+
+
+
+            # image_prompt = get_image_prompt(initial_prompt)
+            # url = get_dalle3_image(image_prompt)
+            # path, img = download_image_to_temp(url)
+            # st.session_state.image_path = path
+            # st.session_state.step = 1
+            # st.rerun()
 
     else:
         refine_prompt = st.text_area("Refine the current image", height=100)
         if st.button("Refine Image"):
-            refined_text = langchain_get_refined_prompt(llm, refine_prompt, st.session_state.prompt_history, st.session_state.image_path) #(llm, instruction, chat_history, image_path):
-            image_prompt = get_dalle_prompt(refined_text)
-            url = get_dalle3_image(image_prompt)
-            os.remove(st.session_state.image_path)
-            path, img = download_image_to_temp(url)
-            st.session_state.image_path = path
+            refined_image_prompt = get_gpt_image1_prompt(refine_prompt)
+            response_id = refine_gpt_image1_image(
+                refined_image_prompt, 
+                st.session_state.previous_response_id, 
+                filename="refined_food.png"
+            )
+
+            st.session_state.previous_response_id = response_id
+            st.session_state.image_path = "refined_food.png"
             st.session_state.step += 1
-            st.session_state.prompt_history.append((refine_prompt, refined_text))
             st.rerun()
+
+
+            # refined_text = langchain_get_refined_prompt(llm, refine_prompt, st.session_state.prompt_history, st.session_state.image_path) #(llm, instruction, chat_history, image_path):
+            # image_prompt = get_image_prompt(refined_text)
+            # url = get_dalle3_image(image_prompt)
+            # os.remove(st.session_state.image_path)
+            # path, img = download_image_to_temp(url)
+            # st.session_state.image_path = path
+            # st.session_state.step += 1
+            # st.session_state.prompt_history.append((refine_prompt, refined_text))
+            # st.rerun()
 
     if st.button("Reset"):
         st.session_state.image_path = None
