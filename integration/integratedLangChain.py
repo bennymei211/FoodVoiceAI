@@ -30,29 +30,29 @@ from langchain_core.prompts import MessagesPlaceholder
 load_dotenv()
 client = OpenAI()
 # image prompt for dall-e-3
-def get_image_prompt(user_input):
-    image_prompt_template="""
-    Create a DALL-E-3 image prompt describing a photorealistic, top-down view of ONLY the following meal:
-    {meal_input}
-    - The background must be plain white.
-    - Do NOT include any utensils, decorations, or extra items.
-    - Focus only on the lsited food items and their ingredients
-    - No table or background context should appear
-    - The food should be centered
-    """
+# def get_image_prompt(user_input):
+#     image_prompt_template="""
+#     Create a DALL-E-3 image prompt describing a photorealistic, top-down view of ONLY the following meal:
+#     {meal_input}
+#     - The background must be plain white.
+#     - Do NOT include any utensils, decorations, or extra items.
+#     - Focus only on the lsited food items and their ingredients
+#     - No table or background context should appear
+#     - The food should be centered
+#     """
 
-    image_prompt = ChatPromptTemplate.from_template(image_prompt_template)
-    return image_prompt.format(meal_input=user_input)
+#     image_prompt = ChatPromptTemplate.from_template(image_prompt_template)
+#     return image_prompt.format(meal_input=user_input)
 
-def get_dalle3_image(prompt):
-    response = client.images.generate(
-        model="dall-e-3",
-        prompt=prompt,
-        size="1024x1024",
-        n=1,
-        response_format="url"
-    )
-    return response.data[0].url
+# def get_dalle3_image(prompt):
+#     response = client.images.generate(
+#         model="dall-e-3",
+#         prompt=prompt,
+#         size="1024x1024",
+#         n=1,
+#         response_format="url"
+#     )
+#     return response.data[0].url
 
 # prints response from gpt-4o
 def get_gpt_response(llm, user_input, chat_history):
@@ -154,7 +154,7 @@ def get_gpt_image1_prompt(user_input):
     {meal_input}
     - The background must be plain white.
     - Do NOT include any utensils, decorations, or extra items.
-    - Focus only on the lsited food items and their ingredients
+    - Focus only on the lsited food items
     - No table or background context should appear
     - The food should be centered
     """
@@ -188,7 +188,13 @@ def refine_gpt_image1_image(instruction, previous_response_id, filename = "refin
         model="gpt-4o",
         previous_response_id=previous_response_id,
         input=instruction,
-        tools=[{"type": "image_generation"}],
+        tools=[
+            {
+                "type": "image_generation",
+                "size": "1024x1024",
+                "quality": "high", 
+            }
+        ],
     )
 
     image_data = [
