@@ -165,7 +165,10 @@ def get_gpt_image1_prompt(user_input):
 def get_gpt_image1_image(prompt, filename = "food.png"):
     response = client.responses.create(
         model="gpt-4o",
-        input=prompt,
+        input=[
+            {"role": "user", "content": f"{prompt}"},
+            # {"role": "user", "content": "Provide a short, Text-To-Speech friendly description of the dish."}
+        ],
         tools=[{"type": "image_generation"}],
     )
 
@@ -181,13 +184,16 @@ def get_gpt_image1_image(prompt, filename = "food.png"):
         with open(filename, "wb") as f:
             f.write(base64.b64decode(image_base64))
 
-    return response.id
+    return response
     
 def refine_gpt_image1_image(instruction, previous_response_id, filename = "refined_food.png"):
     refined_response = client.responses.create(
         model="gpt-4o",
         previous_response_id=previous_response_id,
-        input=instruction,
+        input=[
+            {"role": "user", "content": f"{instruction}"},
+            # {"role": "user", "content": "Provide a short, updated Text-To-Speech friendly description of the dish. Also describe changes made."}
+        ],
         tools=[
             {
                 "type": "image_generation",
@@ -208,7 +214,7 @@ def refine_gpt_image1_image(instruction, previous_response_id, filename = "refin
         with open(filename, "wb") as f:
             f.write(base64.b64decode(image_base64))
 
-    return refined_response.id
+    return refined_response
 
 
 
@@ -242,11 +248,12 @@ with col2:
         initial_prompt = st.text_input("Initial prompt", value="chicken biryani on a plate", key="initial")
         if st.button("Generate Initial Image"):
             image_prompt = get_gpt_image1_prompt(initial_prompt)
-            response_id = get_gpt_image1_image(image_prompt, filename="initial_food.png")
+            response = get_gpt_image1_image(image_prompt, filename="initial_food.png")
 
-            st.session_state.previous_response_id = response_id
+            st.session_state.previous_response_id = response.id
             st.session_state.image_path = "initial_food.png"
             st.session_state.step = 1
+            st.session_state.prompt_history.append((initial_prompt, response.output_text))
             st.rerun()
 
 
@@ -262,15 +269,16 @@ with col2:
         refine_prompt = st.text_area("Refine the current image", height=100)
         if st.button("Refine Image"):
             refined_image_prompt = get_gpt_image1_prompt(refine_prompt)
-            response_id = refine_gpt_image1_image(
+            refined_response = refine_gpt_image1_image(
                 refined_image_prompt, 
                 st.session_state.previous_response_id, 
                 filename="refined_food.png"
             )
 
-            st.session_state.previous_response_id = response_id
+            st.session_state.previous_response_id = refined_response.id
             st.session_state.image_path = "refined_food.png"
             st.session_state.step += 1
+            st.session_state.prompt_history.append((refine_prompt, refined_response.output_text))
             st.rerun()
 
 
