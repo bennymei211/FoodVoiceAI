@@ -165,13 +165,11 @@ def get_gpt_image1_prompt(user_input):
 def get_gpt_image1_image(prompt, filename = "food.png"):
     response = client.responses.create(
         model="gpt-4o",
-        input=[
-            {"role": "user", "content": f"{prompt}"},
-            # {"role": "user", "content": "Provide a short, Text-To-Speech friendly description of the dish."}
-        ],
+        input=prompt,
         tools=[{"type": "image_generation"}],
     )
 
+    print(response)
     image_data = [
         output.result
         for output in response.output
@@ -183,17 +181,14 @@ def get_gpt_image1_image(prompt, filename = "food.png"):
 
         with open(filename, "wb") as f:
             f.write(base64.b64decode(image_base64))
-
+    
     return response
     
 def refine_gpt_image1_image(instruction, previous_response_id, filename = "refined_food.png"):
     refined_response = client.responses.create(
         model="gpt-4o",
         previous_response_id=previous_response_id,
-        input=[
-            {"role": "user", "content": f"{instruction}"},
-            # {"role": "user", "content": "Provide a short, updated Text-To-Speech friendly description of the dish. Also describe changes made."}
-        ],
+        input=instruction,
         tools=[
             {
                 "type": "image_generation",
