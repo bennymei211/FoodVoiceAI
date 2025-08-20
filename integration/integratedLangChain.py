@@ -10,12 +10,14 @@ import tempfile
 from dotenv import load_dotenv
 import json
 import pyttsx3
-import os
+import asyncio
 import time
 from dotenv import load_dotenv
 from datetime import date
 from typing import List
-from openai import OpenAI
+from pathlib import Path
+from openai import OpenAI, AsyncOpenAI
+from openai.helpers import LocalAudioPlayer
 import speech_recognition as sr
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage, AIMessage
@@ -169,7 +171,6 @@ def get_gpt_image1_image(prompt, filename = "food.png"):
         tools=[{"type": "image_generation"}],
     )
 
-    print(response)
     image_data = [
         output.result
         for output in response.output
@@ -182,6 +183,9 @@ def get_gpt_image1_image(prompt, filename = "food.png"):
         with open(filename, "wb") as f:
             f.write(base64.b64decode(image_base64))
     
+    # *** CHECK RESPONSE OBJECT FOR TEXT OUTPUT ***
+    print(response)
+
     return response
     
 def refine_gpt_image1_image(instruction, previous_response_id, filename = "refined_food.png"):
@@ -211,8 +215,27 @@ def refine_gpt_image1_image(instruction, previous_response_id, filename = "refin
 
     return refined_response
 
+def tts(input: str) -> None:
+    speech_file_path = Path(__file__).parent / "speech.mp3"
+    with client.audio.speech.with_streaming_response.create(
+        model="gpt-4o-mini-tts",
+        voice="onyx",
+        input=input,
+        response_format="mp3",
+    ) as response:
+        response.stream_to_file(speech_file_path)
 
-
+def autoplay_audio(file_path: str):
+    with open(file_path, "rb") as f:
+        data = f.read()
+        b64 = base64.b64encode(data).decode()
+        md = f"""
+            <audio controls autoplay="true">
+            <source src="data:audio/mp3;base64, {b64}" type="audio/mp3">
+            </audio>
+        """
+        st.markdown(md, unsafe_allow_html=True)
+    
 
 
 # Streamlit UI starts here
@@ -226,6 +249,8 @@ if "step" not in st.session_state:
     st.session_state.step = 0
 if "prompt_history" not in st.session_state:
     st.session_state.prompt_history = []
+if "audio_generated" not in st.session_state:
+    st.session_state.audio_generated = False;
 
 # Layout: 2 columns
 col1, col2 = st.columns([2, 1])
@@ -244,14 +269,13 @@ with col2:
         if st.button("Generate Initial Image"):
             image_prompt = get_gpt_image1_prompt(initial_prompt)
             response = get_gpt_image1_image(image_prompt, filename="initial_food.png")
-
             st.session_state.previous_response_id = response.id
             st.session_state.image_path = "initial_food.png"
             st.session_state.step = 1
             st.session_state.prompt_history.append((initial_prompt, response.output_text))
+            tts(response.output_text)
+            st.session_state.audio_generated = True
             st.rerun()
-
-
 
             # image_prompt = get_image_prompt(initial_prompt)
             # url = get_dalle3_image(image_prompt)
@@ -274,6 +298,8 @@ with col2:
             st.session_state.image_path = "refined_food.png"
             st.session_state.step += 1
             st.session_state.prompt_history.append((refine_prompt, refined_response.output_text))
+            tts(refined_response.output_text)
+            st.session_state.audio_generated = True
             st.rerun()
 
 
@@ -286,6 +312,10 @@ with col2:
             # st.session_state.step += 1
             # st.session_state.prompt_history.append((refine_prompt, refined_text))
             # st.rerun()
+    
+    if st.session_state.get("audio_generated", False):
+        autoplay_audio("speech.mp3")
+        st.session_state.audio_generated = False
 
     if st.button("Reset"):
         st.session_state.image_path = None
