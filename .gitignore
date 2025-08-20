@@ -10,4 +10,6 @@ node_modules/
 
 integrated-history.py
 
-.png
+*.png
+
+*.mp3

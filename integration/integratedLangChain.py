@@ -182,9 +182,6 @@ def get_gpt_image1_image(prompt, filename = "food.png"):
 
         with open(filename, "wb") as f:
             f.write(base64.b64decode(image_base64))
-    
-    # *** CHECK RESPONSE OBJECT FOR TEXT OUTPUT ***
-    print(response)
 
     return response
     
