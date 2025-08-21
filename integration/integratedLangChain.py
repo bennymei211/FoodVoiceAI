@@ -168,7 +168,13 @@ def get_gpt_image1_image(prompt, filename = "food.png"):
     response = client.responses.create(
         model="gpt-4o",
         input=prompt,
-        tools=[{"type": "image_generation"}],
+        tools=[
+            {
+                "type": "image_generation",
+                "size": "1024x1024",
+                "quality": "high", 
+            }
+        ],
     )
 
     image_data = [
