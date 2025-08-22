@@ -271,12 +271,13 @@ with col2:
         initial_prompt = st.text_input("Initial prompt", value="chicken biryani on a plate", key="initial")
         if st.button("Generate Initial Image"):
             image_prompt = get_gpt_image1_prompt(initial_prompt)
-            response = get_gpt_image1_image(image_prompt, filename="initial_food.png")
-            st.session_state.previous_response_id = response.id
+            image_response = get_gpt_image1_image(image_prompt, filename="initial_food.png")
+
+            st.session_state.previous_response_id = image_response.id
             st.session_state.image_path = "initial_food.png"
             st.session_state.step = 1
-            st.session_state.prompt_history.append((initial_prompt, response.output_text))
-            tts(response.output_text)
+            st.session_state.prompt_history.append((initial_prompt, image_response.output_text))
+            tts(image_response.output_text)
             st.session_state.audio_generated = True
             st.rerun()
 
@@ -291,17 +292,17 @@ with col2:
         refine_prompt = st.text_area("Refine the current image", height=100)
         if st.button("Refine Image"):
             refined_image_prompt = get_gpt_image1_prompt(refine_prompt)
-            refined_response = refine_gpt_image1_image(
+            refined_image_response = refine_gpt_image1_image(
                 refined_image_prompt, 
                 st.session_state.previous_response_id, 
                 filename="refined_food.png"
             )
 
-            st.session_state.previous_response_id = refined_response.id
+            st.session_state.previous_response_id = refined_image_response.id
             st.session_state.image_path = "refined_food.png"
             st.session_state.step += 1
-            st.session_state.prompt_history.append((refine_prompt, refined_response.output_text))
-            tts(refined_response.output_text)
+            st.session_state.prompt_history.append((refine_prompt, refined_image_response.output_text))
+            tts(refined_image_response.output_text)
             st.session_state.audio_generated = True
             st.rerun()
 
