@@ -58,6 +58,12 @@ client = OpenAI()
 
 # prints response from gpt-4o
 def get_gpt_response(llm, user_input, chat_history):
+    formatted_history = []
+    for role, content in chat_history:
+        if role == "user":
+            formatted_history.append(HumanMessage(content=content))
+        elif role == "assistant":
+            formatted_history.append(AIMessage(content=content))
     # plain conversation prompt template
     system_message="""
     You are a helpful dietary assistant that logs and keeps track of meals. Make sure to ask for each meal. Given the following input:
@@ -75,7 +81,7 @@ def get_gpt_response(llm, user_input, chat_history):
     # chain for plain conversation generation
     chain = plain_prompt | llm
 
-    response = chain.invoke({"meal_input":user_input, "chat_history": chat_history}).content
+    response = chain.invoke({"meal_input":user_input, "chat_history": formatted_history}).content
     return response
 
 # # Set your OpenAI API key
@@ -272,12 +278,13 @@ with col2:
         if st.button("Generate Initial Image"):
             image_prompt = get_gpt_image1_prompt(initial_prompt)
             image_response = get_gpt_image1_image(image_prompt, filename="initial_food.png")
+            text_response = get_gpt_response(llm, initial_prompt, st.session_state.prompt_history)
 
             st.session_state.previous_response_id = image_response.id
             st.session_state.image_path = "initial_food.png"
             st.session_state.step = 1
-            st.session_state.prompt_history.append((initial_prompt, image_response.output_text))
-            tts(image_response.output_text)
+            st.session_state.prompt_history.append((initial_prompt, text_response))
+            tts(text_response)
             st.session_state.audio_generated = True
             st.rerun()
 
@@ -297,12 +304,13 @@ with col2:
                 st.session_state.previous_response_id, 
                 filename="refined_food.png"
             )
+            refined_text_response = get_gpt_response(llm, refine_prompt, st.session_state.prompt_history)
 
             st.session_state.previous_response_id = refined_image_response.id
             st.session_state.image_path = "refined_food.png"
             st.session_state.step += 1
-            st.session_state.prompt_history.append((refine_prompt, refined_image_response.output_text))
-            tts(refined_image_response.output_text)
+            st.session_state.prompt_history.append((refine_prompt, refined_text_response))
+            tts(refined_text_response)
             st.session_state.audio_generated = True
             st.rerun()
 
