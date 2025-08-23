@@ -58,12 +58,6 @@ client = OpenAI()
 
 # prints response from gpt-4o
 def get_gpt_response(llm, user_input, chat_history):
-    formatted_history = []
-    for role, content in chat_history:
-        if role == "user":
-            formatted_history.append(HumanMessage(content=content))
-        elif role == "assistant":
-            formatted_history.append(AIMessage(content=content))
     # plain conversation prompt template
     system_message="""
     You are a helpful dietary assistant that logs and keeps track of meals. Make sure to ask for each meal. Given the following input:
@@ -77,11 +71,10 @@ def get_gpt_response(llm, user_input, chat_history):
         MessagesPlaceholder(variable_name="chat_history"),
         ("human", "{meal_input}")
     ])
-
     # chain for plain conversation generation
     chain = plain_prompt | llm
 
-    response = chain.invoke({"meal_input":user_input, "chat_history": formatted_history}).content
+    response = chain.invoke({"meal_input":user_input, "chat_history": chat_history}).content
     return response
 
 # # Set your OpenAI API key
@@ -178,7 +171,7 @@ def get_gpt_image1_image(prompt, filename = "food.png"):
             {
                 "type": "image_generation",
                 "size": "1024x1024",
-                "quality": "high", 
+                "quality": "low", 
             }
         ],
     )
@@ -206,7 +199,7 @@ def refine_gpt_image1_image(instruction, previous_response_id, filename = "refin
             {
                 "type": "image_generation",
                 "size": "1024x1024",
-                "quality": "high", 
+                "quality": "low", 
             }
         ],
     )
@@ -283,7 +276,8 @@ with col2:
             st.session_state.previous_response_id = image_response.id
             st.session_state.image_path = "initial_food.png"
             st.session_state.step = 1
-            st.session_state.prompt_history.append((initial_prompt, text_response))
+            st.session_state.prompt_history.append(HumanMessage(content=initial_prompt))
+            st.session_state.prompt_history.append(AIMessage(content=text_response))
             tts(text_response)
             st.session_state.audio_generated = True
             st.rerun()
@@ -309,7 +303,8 @@ with col2:
             st.session_state.previous_response_id = refined_image_response.id
             st.session_state.image_path = "refined_food.png"
             st.session_state.step += 1
-            st.session_state.prompt_history.append((refine_prompt, refined_text_response))
+            st.session_state.prompt_history.append(HumanMessage(content=refine_prompt))
+            st.session_state.prompt_history.append(AIMessage(content=refined_text_response))
             tts(refined_text_response)
             st.session_state.audio_generated = True
             st.rerun()
@@ -338,5 +333,8 @@ with col2:
     # Show previous prompts
     if st.session_state.prompt_history:
         st.markdown("### 🧾 History")
-        for i, (u, g) in enumerate(st.session_state.prompt_history[::-1], 1):
-            st.markdown(f"**You:** {u}\n\n**GPT:** {g}")
+        for msg in st.session_state.prompt_history[::-1]:
+            if isinstance(msg, HumanMessage):
+                st.markdown(f"**You:** {msg.content}")
+            else:
+                st.markdown(f"**GPT:** {msg.content}")
