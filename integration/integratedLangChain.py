@@ -31,30 +31,6 @@ from langchain_core.prompts import MessagesPlaceholder
 
 load_dotenv()
 client = OpenAI()
-# image prompt for dall-e-3
-# def get_image_prompt(user_input):
-#     image_prompt_template="""
-#     Create a DALL-E-3 image prompt describing a photorealistic, top-down view of ONLY the following meal:
-#     {meal_input}
-#     - The background must be plain white.
-#     - Do NOT include any utensils, decorations, or extra items.
-#     - Focus only on the lsited food items and their ingredients
-#     - No table or background context should appear
-#     - The food should be centered
-#     """
-
-#     image_prompt = ChatPromptTemplate.from_template(image_prompt_template)
-#     return image_prompt.format(meal_input=user_input)
-
-# def get_dalle3_image(prompt):
-#     response = client.images.generate(
-#         model="dall-e-3",
-#         prompt=prompt,
-#         size="1024x1024",
-#         n=1,
-#         response_format="url"
-#     )
-#     return response.data[0].url
 
 # prints response from gpt-4o
 def get_gpt_response(llm, user_input, chat_history):
@@ -76,19 +52,6 @@ def get_gpt_response(llm, user_input, chat_history):
 
     response = chain.invoke({"meal_input":user_input, "chat_history": chat_history}).content
     return response
-
-# # Set your OpenAI API key
-# def generate_image(prompt):
-#     #This function uses DALLE.E 3 model to create an image from a text prompt and returns the URL where the generated image can be accessed.
-#     response = openai.images.generate(
-#         model="dall-e-3",
-#         prompt=prompt,
-#         size="1024x1024",
-#         quality="standard",
-#         n=1,
-#         response_format="url"
-#     )
-#     return response.data[0].url
 
 def download_image_to_temp(url):
     #This function downloads an image from the internet.Loads it into memory and saves it as a temporary .png file.
