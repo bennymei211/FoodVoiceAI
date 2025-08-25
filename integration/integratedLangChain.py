@@ -86,35 +86,35 @@ def download_image_to_temp(url):
 #     )
 #     return response.choices[0].message.content.strip()
 
-def langchain_get_refined_prompt(llm, instruction, chat_history, image_path):
-    with open(image_path, "rb") as img_file:
-        base64_img = base64.b64encode(img_file.read()).decode("utf-8")
+# def langchain_get_refined_prompt(llm, instruction, chat_history, image_path):
+#     with open(image_path, "rb") as img_file:
+#         base64_img = base64.b64encode(img_file.read()).decode("utf-8")
     
-    # plain conversation prompt template
-    system_message="""
-    You are a helpful image refinement assistant.
-    Given an image, context, and instruction, refine or describe the most recent dish's image according to the instruction.
-    """
+#     # plain conversation prompt template
+#     system_message="""
+#     You are a helpful image refinement assistant.
+#     Given an image, context, and instruction, refine or describe the most recent dish's image according to the instruction.
+#     """
 
-    # prompt for plain conversation
-    plain_prompt = ChatPromptTemplate.from_messages([
-        ("system", system_message),
-        MessagesPlaceholder(variable_name="chat_history"),
-        ("human", [
-            {"type": "text", "text": f"Refine this image using: {instruction}"},
-            {"type": "image_url", "image_url": f"data:image/png;base64,{base64_img}"}
-        ])
-    ])
+#     # prompt for plain conversation
+#     plain_prompt = ChatPromptTemplate.from_messages([
+#         ("system", system_message),
+#         MessagesPlaceholder(variable_name="chat_history"),
+#         ("human", [
+#             {"type": "text", "text": f"Refine this image using: {instruction}"},
+#             {"type": "image_url", "image_url": f"data:image/png;base64,{base64_img}"}
+#         ])
+#     ])
 
-    # chain for plain conversation generation
-    chain = plain_prompt | llm
+#     # chain for plain conversation generation
+#     chain = plain_prompt | llm
 
-    response = chain.invoke({"chat_history": chat_history}).content
-    return response
+#     response = chain.invoke({"chat_history": chat_history}).content
+#     return response
 
 def get_gpt_image1_prompt(user_input):
     image_prompt_template="""
-    Create a DALL-E-3 image prompt describing a photorealistic, top-down view of ONLY the following meal:
+    Create a GPT-Image-1 image prompt describing a photorealistic, top-down view of ONLY the following meal:
     {meal_input}
     - The background must be plain white.
     - Do NOT include any utensils, decorations, or extra items.
