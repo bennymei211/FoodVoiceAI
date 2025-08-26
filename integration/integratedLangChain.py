@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 # from langchain_community.document_loaders import JSONLoader
 # from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.prompts import MessagesPlaceholder
+from st_audiorec import st_audiorec
 
 
 load_dotenv()
@@ -200,7 +201,27 @@ def autoplay_audio(file_path: str):
             </audio>
         """
         st.markdown(md, unsafe_allow_html=True)
-    
+
+# sourced from https://github.com/stefanrmmr/streamlit-audio-recorder/tree/main
+def record_speech():
+    wav_audio_data = st_audiorec()
+
+    if wav_audio_data is not None:
+        st.audio(wav_audio_data, format='audio/wav')
+        audio_path = Path("recorded_audio.wav")
+        with open(audio_path, "wb") as f:
+            f.write(wav_audio_data)
+
+        with open(audio_path, "rb") as audio_file:
+            # whisper transcription
+            transcription = client.audio.transcriptions.create(
+            model="gpt-4o-transcribe", # or use model="whisper-1" for higher quality transcription
+            file=audio_file,
+            response_format="text"
+        )
+        
+        return transcription
+    return None
 
 
 # Streamlit UI starts here
@@ -231,15 +252,17 @@ with col2:
     st.subheader("💬 Describe your prompt")
     if st.session_state.step == 0:
         initial_prompt = st.text_input("Initial prompt", value="chicken biryani on a plate", key="initial")
+        initial_speech_prompt = record_speech()
         if st.button("Generate Initial Image"):
-            image_prompt = get_gpt_image1_prompt(initial_prompt)
+            final_prompt = initial_speech_prompt if initial_speech_prompt else initial_prompt
+            image_prompt = get_gpt_image1_prompt(final_prompt)
             image_response = get_gpt_image1_image(image_prompt, filename="initial_food.png")
-            text_response = get_gpt_response(llm, initial_prompt, st.session_state.prompt_history)
+            text_response = get_gpt_response(llm, final_prompt, st.session_state.prompt_history)
 
             st.session_state.previous_response_id = image_response.id
             st.session_state.image_path = "initial_food.png"
             st.session_state.step = 1
-            st.session_state.prompt_history.append(HumanMessage(content=initial_prompt))
+            st.session_state.prompt_history.append(HumanMessage(content=final_prompt))
             st.session_state.prompt_history.append(AIMessage(content=text_response))
             tts(text_response)
             st.session_state.audio_generated = True
@@ -254,19 +277,21 @@ with col2:
 
     else:
         refine_prompt = st.text_area("Refine the current image", height=100)
+        speech_refine_prompt = record_speech()
         if st.button("Refine Image"):
-            refined_image_prompt = get_gpt_image1_prompt(refine_prompt)
+            final_refined_prompt = speech_refine_prompt if speech_refine_prompt else refine_prompt
+            refined_image_prompt = get_gpt_image1_prompt(final_refined_prompt)
             refined_image_response = refine_gpt_image1_image(
                 refined_image_prompt, 
                 st.session_state.previous_response_id, 
                 filename="refined_food.png"
             )
-            refined_text_response = get_gpt_response(llm, refine_prompt, st.session_state.prompt_history)
+            refined_text_response = get_gpt_response(llm, final_refined_prompt, st.session_state.prompt_history)
 
             st.session_state.previous_response_id = refined_image_response.id
             st.session_state.image_path = "refined_food.png"
             st.session_state.step += 1
-            st.session_state.prompt_history.append(HumanMessage(content=refine_prompt))
+            st.session_state.prompt_history.append(HumanMessage(content=final_refined_prompt))
             st.session_state.prompt_history.append(AIMessage(content=refined_text_response))
             tts(refined_text_response)
             st.session_state.audio_generated = True
