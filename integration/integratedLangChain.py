@@ -213,7 +213,7 @@ def record_speech():
             f.write(wav_audio_data)
 
         with open(audio_path, "rb") as audio_file:
-            # whisper transcription
+            # openai transcription
             transcription = client.audio.transcriptions.create(
             model="gpt-4o-transcribe", # or use model="whisper-1" for higher quality transcription
             file=audio_file,
