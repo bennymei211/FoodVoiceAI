@@ -7,3 +7,11 @@ __pycache__/
 
 # Node
 node_modules/
+
+integrated-history.py
+
+*.png
+
+*.mp3
+
+*.wav
