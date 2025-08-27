@@ -135,7 +135,7 @@ def get_gpt_image1_image(prompt, filename = "food.png"):
             {
                 "type": "image_generation",
                 "size": "1024x1024",
-                "quality": "low", 
+                "quality": "high", 
             }
         ],
     )
@@ -163,7 +163,7 @@ def refine_gpt_image1_image(instruction, previous_response_id, filename = "refin
             {
                 "type": "image_generation",
                 "size": "1024x1024",
-                "quality": "low", 
+                "quality": "high", 
             }
         ],
     )
@@ -223,6 +223,76 @@ def record_speech():
         return transcription
     return None
 
+# returns gpt-4o response as a json-formatted string
+def get_gpt_json_response(llm_with_structure, user_input):
+    # json format prompt template
+    json_prompt_template="""
+    You are a helpful dietary assistant that logs and keeps track of meals. Given the following input:
+    {meal_input}
+    Provide and log nutritional values for the meal. 
+    Extract the information into a JSON format with this structure:
+
+    {format_structure}
+    """
+
+    # # structure for json format
+    # format_structure = """{
+    #     "meal": "...",
+    #     "dish_name": "...",
+    #     "ingredients": ["...", "..."],
+    #     "nutritional_info": {
+    #         "protein": "...",
+    #         "fat": "...",
+    #         "carbs": "...",
+    #         "sodium": "...",
+    #         ...
+    #     }
+    # }"""
+
+    class NutritionalInfo(BaseModel):
+        protein: float = Field(description="Amount of protein in grams")
+        fat: float = Field(description="Amount of fat in grams")
+        carbohydrates: float = Field(description="Amount of carbohydrates in grams")
+        sodium: float = Field(description="Amount of sodium in milligrams")
+        fiber: float = Field(description="Amount of fiber in grams")
+        sugar: float = Field(description="Amount of sugar in grams")
+
+    class Meal(BaseModel):
+        meal: str = Field(..., description="Meal of the day")
+        dish_name: str = Field(description="Name of the dish")
+        ingredients: List[str] = Field(description="List of ingredients from the dish")
+        nutritional_info: NutritionalInfo = Field(description="Nutritional information for the dish")
+
+
+
+    # prompt for json format
+    json_prompt = ChatPromptTemplate.from_template(json_prompt_template)
+
+    parser = JsonOutputParser(pydantic_object=Meal)
+
+    # chain for json format generation
+    json_chain = json_prompt | llm_with_structure | parser
+
+    meal_as_json = json_chain.invoke({"meal_input":user_input, "format_structure":parser.get_format_instructions()})
+    
+    return meal_as_json
+
+def append_json_entry(new_entry, filename="data.json"):
+    if not os.path.exists(filename):
+        with open(filename, 'w') as f:
+            json.dump([], f, indent=4)
+
+    with open(filename, 'r+') as file:
+        try:
+            data = json.load(file)
+        except json.JSONDecodeError:
+            data =[]
+
+        data.append(new_entry)
+
+        file.seek(0)
+        json.dump(data, file, indent=4)
+        file.truncate()
 
 # Streamlit UI starts here
 st.set_page_config(layout="wide")
@@ -251,7 +321,7 @@ with col2:
     llm = ChatOpenAI(model="gpt-4o")
     st.subheader("💬 Describe your prompt")
     if st.session_state.step == 0:
-        initial_prompt = st.text_input("Initial prompt", value="chicken biryani on a plate", key="initial")
+        initial_prompt = st.text_input("Initial prompt", placeholder="Describe your meal...")
         initial_speech_prompt = record_speech()
         if st.button("Generate Initial Image"):
             final_prompt = initial_speech_prompt if initial_speech_prompt else initial_prompt
@@ -276,7 +346,7 @@ with col2:
             # st.rerun()
 
     else:
-        refine_prompt = st.text_area("Refine the current image", height=100)
+        refine_prompt = st.text_area("Refine the current image", placeholder="Describe a refinement...", height=100)
         speech_refine_prompt = record_speech()
         if st.button("Refine Image"):
             final_refined_prompt = speech_refine_prompt if speech_refine_prompt else refine_prompt

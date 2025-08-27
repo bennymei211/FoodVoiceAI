@@ -15,3 +15,7 @@ integrated-history.py
 *.mp3
 
 *.wav
+
+/tests
+
+/langchain-tests
