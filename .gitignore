@@ -15,3 +15,5 @@ integrated-history.py
 *.mp3
 
 *.wav
+
+/workshop
